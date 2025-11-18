@@ -27,8 +27,16 @@ app.add_middleware(
 
 # Store user secrets (in production, use a database)
 USER_SECRETS = {
-    "you@example.com": "my-super-secret"
+    "roshanbanu0906@gmail.com": "my-super-secret",
+    "you@example.com": "my-super-secret"  # Added backup email
 }
+
+# Debug: Print configured secrets on startup
+print("=== SERVER STARTING ===")
+print("Configured emails and secrets:")
+for email, secret in USER_SECRETS.items():
+    print(f"  {email}: {secret}")
+print("=======================")
 
 class QuizRequest(BaseModel):
     email: str
@@ -45,7 +53,16 @@ class AnswerSubmission(BaseModel):
 
 def verify_secret(email: str, secret: str) -> bool:
     """Verify user secret"""
-    return USER_SECRETS.get(email) == secret
+    print(f"🔐 DEBUG SECRET VERIFICATION:")
+    print(f"   Email received: '{email}'")
+    print(f"   Secret received: '{secret}'")
+    print(f"   Stored secret for this email: '{USER_SECRETS.get(email)}'")
+    
+    result = USER_SECRETS.get(email) == secret
+    print(f"   Verification result: {result}")
+    print(f"   All configured emails: {list(USER_SECRETS.keys())}")
+    
+    return result
 
 async def download_file(url: str) -> Optional[bytes]:
     """Download file from URL with error handling"""
@@ -186,7 +203,7 @@ async def solve_quiz_task(request: QuizRequest) -> Dict[str, Any]:
         return {
             "ok": True,
             "answer": answer,
-            "submission": submission_data.dict(),
+            "submission": submission_data.model_dump(),
             "submission_result": submission_result,
             "processed_attachments": processed_attachments
         }
@@ -201,6 +218,10 @@ async def solve_quiz_task(request: QuizRequest) -> Dict[str, Any]:
 @app.post("/")
 async def solve_quiz(request: QuizRequest, background_tasks: BackgroundTasks):
     """Main quiz solving endpoint"""
+    print(f"📨 INCOMING REQUEST:")
+    print(f"   Email: {request.email}")
+    print(f"   URL: {request.url}")
+    
     # Verify secret
     if not verify_secret(request.email, request.secret):
         raise HTTPException(status_code=403, detail="Invalid secret")
@@ -220,6 +241,10 @@ async def upload_file(
     file: UploadFile = File(...)
 ):
     """Upload file for processing"""
+    print(f"📤 UPLOAD REQUEST:")
+    print(f"   Email: {email}")
+    print(f"   Filename: {file.filename}")
+    
     if not verify_secret(email, secret):
         raise HTTPException(status_code=403, detail="Invalid secret")
     
